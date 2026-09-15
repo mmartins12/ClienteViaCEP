@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Consulta de CEP - ViaCEP</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 420px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #f4f6f8;
+  }
+  h1 {
+    font-size: 20px;
+    color: #2c3e50;
+  }
+  .card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+    color: #333;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  button {
+    margin-top: 12px;
+    padding: 10px 16px;
+    background: #2c7be5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  button:disabled {
+    background: #9bb9dd;
+    cursor: default;
+  }
+  #resultado {
+    margin-top: 18px;
+    line-height: 1.6;
+  }
+  #resultado p {
+    margin: 4px 0;
+  }
+  .erro {
+    color: #c0392b;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>Consulta de CEP (ViaCEP)</h1>
+
+<div class="card">
+  <label for="cep">Digite o CEP:</label>
+  <input type="text" id="cep" placeholder="00000-000" maxlength="9">
+  <button id="btnBuscar">Buscar</button>
+
+  <div id="resultado"></div>
+</div>
+
+<script>
+  const cepInput = document.getElementById('cep');
+  const btnBuscar = document.getElementById('btnBuscar');
+  const resultadoDiv = document.getElementById('resultado');
+
+  // DESAFIO: formatador automático do campo CEP (00000-000)
+  cepInput.addEventListener('input', function () {
+    let valor = cepInput.value.replace(/\D/g, ''); // remove tudo que não é número
+    valor = valor.substring(0, 8); // limita a 8 dígitos
+
+    if (valor.length > 5) {
+      valor = valor.substring(0, 5) + '-' + valor.substring(5);
+    }
+
+    cepInput.value = valor;
+  });
+
+  // permite buscar apertando Enter
+  cepInput.addEventListener('keyup', function (e) {
+    if (e.key === 'Enter') {
+      buscarCep();
+    }
+  });
+
+  btnBuscar.addEventListener('click', buscarCep);
+
+  function buscarCep() {
+    const cepLimpo = cepInput.value.replace(/\D/g, '');
+
+    if (cepLimpo.length !== 8) {
+      resultadoDiv.innerHTML = '<p class="erro">Digite um CEP válido com 8 dígitos.</p>';
+      return;
+    }
+
+    resultadoDiv.innerHTML = '<p>Consultando...</p>';
+    btnBuscar.disabled = true;
+
+    // Consulta via AJAX (fetch) ao webservice ViaCEP
+    fetch('https://viacep.com.br/ws/' + cepLimpo + '/json/')
+      .then(function (resposta) {
+        return resposta.json();
+      })
+      .then(function (dados) {
+        btnBuscar.disabled = false;
+
+        if (dados.erro) {
+          resultadoDiv.innerHTML = '<p class="erro">CEP não encontrado.</p>';
+          return;
+        }
+
+        resultadoDiv.innerHTML =
+          '<p><strong>Logradouro:</strong> ' + dados.logradouro + '</p>' +
+          '<p><strong>Localidade:</strong> ' + dados.localidade + '</p>' +
+          '<p><strong>UF:</strong> ' + dados.uf + '</p>';
+      })
+      .catch(function (erro) {
+        btnBuscar.disabled = false;
+        resultadoDiv.innerHTML = '<p class="erro">Erro ao consultar o serviço. Tente novamente.</p>';
+        console.error(erro);
+      });
+  }
+</script>
+
+</body>
+</html>
+
